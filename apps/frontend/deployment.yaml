@@ -33,8 +33,7 @@ spec:
       imagePullSecrets:
         - name: ecr-secret
       securityContext:
-        runAsNonRoot: true
-        runAsUser: 1000
+        fsGroup: 101
       terminationGracePeriodSeconds: 30
       containers:
         - name: frontend
