@@ -28,7 +28,6 @@ server:
       # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:REGION:ACCOUNT:certificate/CERT_ID
     hosts:
       - argocd.example.com
-
   # Disable TLS from ArgoCD server itself when behind ALB (ALB handles TLS)
   extraArgs:
     - --insecure

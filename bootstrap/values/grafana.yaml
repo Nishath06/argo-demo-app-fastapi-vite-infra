@@ -13,7 +13,7 @@ adminUser: admin
 
 persistence:
   enabled: true
-  storageClassName: ebs-gp3
+  storageClassName: local-path
   size: 5Gi
   accessModes:
     - ReadWriteOnce
