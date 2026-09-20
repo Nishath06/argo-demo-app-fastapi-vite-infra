@@ -42,7 +42,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: backend
-          image: 177001539059.dkr.ecr.ap-south-1.amazonaws.com/devops-starter-kit-backend:14f097c
+          image: 177001539059.dkr.ecr.ap-south-1.amazonaws.com/devops-starter-kit-backend:223ea46
           imagePullPolicy: Always
           ports:
             - name: http
