@@ -2,20 +2,20 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 
 metadata:
-  name: devops-starter-kit
+  name: backend
   namespace: argocd
 
 spec:
   project: default
 
   source:
-    repoURL: https://github.com/Nishath06/argo-demo-app-fastapi-vite-infra.git
+    repoURL: https://github.com/Nishath06/DevOps-example-project-1-infra.git
     targetRevision: main
-    path: apps
+    path: apps/backend
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: starter-kit
+    namespace: apps
 
   syncPolicy:
     automated:
@@ -24,3 +24,11 @@ spec:
 
     syncOptions:
       - CreateNamespace=true
+
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+
+  

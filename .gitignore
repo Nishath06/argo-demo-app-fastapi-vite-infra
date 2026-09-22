@@ -1,0 +1,147 @@
+# ==========================================
+# Terraform
+# ==========================================
+# Local .terraform directories containing downloaded provider plugins and modules
+**/.terraform/*
+.terraform/
+
+# Terraform state files (contain sensitive infrastructure state and secrets)
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Terraform plan files
+*.tfplan*
+
+# Terraform variables (may contain sensitive data, API keys, passwords)
+*.tfvars
+*.tfvars.json
+
+# Whitelist variable example files
+!*.tfvars.example
+!*.example
+
+# Override files (local overrides)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI configuration files
+.terraformrc
+terraform.rc
+
+# Crash logs
+crash.log
+crash.*.log
+
+# ==========================================
+# Secrets, Keys, and Sensitive Data
+# ==========================================
+# Environment files
+.env
+.env.*
+*.env
+!.env.example
+!.env.template
+
+# Private keys, certificates, and tokens
+*.pem
+*.key
+*.crt
+*.cer
+*.pfx
+*.p12
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# Decrypted SOPS / git-crypt files
+*.dec
+*.dec.yaml
+*.dec.yml
+
+# Cloud credentials and sensitive configs
+.aws/
+credentials
+
+# ==========================================
+# Kubernetes & Helm
+# ==========================================
+# Kubeconfig files
+*kubeconfig*
+*.kubeconfig
+
+# Helm package archives & cache
+*.tgz
+.helm/
+
+# ==========================================
+# Python & Node (Local tooling / scripts)
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+.turbo/
+
+# ==========================================
+# Operating System Files
+# ==========================================
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+
+# ==========================================
+# IDEs and Editors
+# ==========================================
+# JetBrains (IntelliJ, PyCharm, etc.)
+.idea/
+
+# VS Code (ignore workspace state, but allow shared configurations)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Vim / Emacs swap and backup files
+*.swp
+*.swo
+*.bak
+*.backup
+*#
+.#*
+
+# ==========================================
+# Logs and Temporary Files
+# ==========================================
+*.log
+*.tmp
+tmp/
+temp/

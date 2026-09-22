@@ -56,7 +56,7 @@ alertmanager:
     storage:
       volumeClaimTemplate:
         spec:
-          storageClassName: local-path
+          storageClassName: ebs-gp3
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
@@ -85,7 +85,7 @@ grafana:
   adminPassword: "prom-operator"  # Override via --set at install time
   persistence:
     enabled: true
-    storageClassName: local-path
+    storageClassName: ebs-gp3
     size: 5Gi
 
 ## Node Exporter

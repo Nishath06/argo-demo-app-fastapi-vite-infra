@@ -33,6 +33,19 @@
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
+# Load environment variables from bootstrap/.env
+# ---------------------------------------------------------------------------
+ENV_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.env"
+
+if [[ -f "${ENV_FILE}" ]]; then
+  echo "[INFO] Loading configuration from ${ENV_FILE}"
+  set -a
+  source "${ENV_FILE}"
+  set +a
+else
+  echo "[WARN] No bootstrap/.env found. Falling back to default environment variables."
+fi
+# ---------------------------------------------------------------------------
 # Colour helpers
 # ---------------------------------------------------------------------------
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC='\033[0m'
@@ -57,11 +70,17 @@ AWS_LBC_CHART_VERSION="${AWS_LBC_CHART_VERSION:-1.8.1}"
 EXTERNAL_SECRETS_CHART_VERSION="${EXTERNAL_SECRETS_CHART_VERSION:-0.10.0}"
 EBS_CSI_CHART_VERSION="${EBS_CSI_CHART_VERSION:-2.33.0}"
 EFS_CSI_CHART_VERSION="${EFS_CSI_CHART_VERSION:-3.0.7}"
-
+SECRETS_STORE_CSI_CHART_VERSION="${SECRETS_STORE_CSI_CHART_VERSION:-1.4.7}"
+AWS_PROVIDER_CHART_VERSION="${AWS_PROVIDER_CHART_VERSION:-0.3.9}"
 # Script directory — all values files are relative to here
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VALUES_DIR="${SCRIPT_DIR}/values"
 
+# Secrets Store CSI Driver IRSA Role
+SECRETS_CSI_IAM_ROLE_ARN="${SECRETS_CSI_IAM_ROLE_ARN:-}"
+
+# External Secrets Operator IRSA Role
+ESO_IAM_ROLE_ARN="${ESO_IAM_ROLE_ARN:-}"
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -123,6 +142,15 @@ helm_upgrade_install() {
   success "'${release}' is ready."
 }
 
+require_env() {
+  local var="$1"
+
+  if [[ -z "${!var:-}" ]]; then
+    error "Environment variable '$var' is required."
+    exit 1
+  fi
+}
+
 # ---------------------------------------------------------------------------
 # Pre-flight checks
 # ---------------------------------------------------------------------------
@@ -155,6 +183,8 @@ setup_helm_repos() {
   add_helm_repo "external-secrets" "https://charts.external-secrets.io"
   add_helm_repo "aws-ebs-csi"     "https://kubernetes-sigs.github.io/aws-ebs-csi-driver"
   add_helm_repo "aws-efs-csi"     "https://kubernetes-sigs.github.io/aws-efs-csi-driver"
+  add_helm_repo "secrets-store-csi-driver" "https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts"
+  add_helm_repo "aws-secrets-manager" "https://aws.github.io/secrets-store-csi-driver-provider-aws"
   run helm repo update
   success "Helm repositories updated."
 }
@@ -226,72 +256,19 @@ install_aws_lbc() {
 # ---------------------------------------------------------------------------
 # Step 5: External Secrets Operator
 # ---------------------------------------------------------------------------
-install_external_secrets() {
-  info "==> Installing External Secrets Operator..."
-  # NOTE: After installation, create SecretStore / ClusterSecretStore CRs
-  # pointing at AWS Secrets Manager or SSM Parameter Store.
-  ensure_namespace "external-secrets"
-  helm_upgrade_install \
-    "external-secrets" \
-    "external-secrets/external-secrets" \
-    "external-secrets" \
-    "${VALUES_DIR}/external-secrets.yaml" \
-    --version "${EXTERNAL_SECRETS_CHART_VERSION}"
-}
 
 # ---------------------------------------------------------------------------
 # Step 6: AWS EBS CSI Driver
 # ---------------------------------------------------------------------------
-install_ebs_csi() {
-  info "==> Installing AWS EBS CSI Driver..."
-  # NOTE: Requires IAM role for EBS operations.
-  # Export EBS_CSI_IAM_ROLE_ARN before running this script.
-  local ebs_role_arn="${EBS_CSI_IAM_ROLE_ARN:-arn:aws:iam::ACCOUNT_ID:role/ebs-csi-controller-sa}"
 
-  ensure_namespace "kube-system"
-  helm_upgrade_install \
-    "aws-ebs-csi-driver" \
-    "aws-ebs-csi/aws-ebs-csi-driver" \
-    "kube-system" \
-    "${VALUES_DIR}/ebs-csi.yaml" \
-    --version "${EBS_CSI_CHART_VERSION}" \
-    --set "controller.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn=${ebs_role_arn}"
-}
 
 # ---------------------------------------------------------------------------
 # Step 7: AWS EFS CSI Driver (optional)
 # ---------------------------------------------------------------------------
-install_efs_csi() {
-  if [[ "${EFS_ENABLED}" != "true" ]]; then
-    warn "EFS_ENABLED is not 'true' — skipping EFS CSI Driver installation."
-    return
-  fi
-  info "==> Installing AWS EFS CSI Driver..."
-  # NOTE: Requires IAM role for EFS operations.
-  # Export EFS_CSI_IAM_ROLE_ARN before running this script.
-  local efs_role_arn="${EFS_CSI_IAM_ROLE_ARN:-arn:aws:iam::ACCOUNT_ID:role/efs-csi-controller-sa}"
-
-  ensure_namespace "kube-system"
-  helm_upgrade_install \
-    "aws-efs-csi-driver" \
-    "aws-efs-csi/aws-efs-csi-driver" \
-    "kube-system" \
-    "${VALUES_DIR}/efs-csi.yaml" \
-    --version "${EFS_CSI_CHART_VERSION}" \
-    --set "controller.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn=${efs_role_arn}"
-}
 
 # ---------------------------------------------------------------------------
 # Step 8: Apply platform namespaces and base resources
 # ---------------------------------------------------------------------------
-apply_platform_base() {
-  info "==> Applying platform base manifests..."
-  local repo_root
-  repo_root="$(cd "${SCRIPT_DIR}/.." && pwd)"
-
-  run kubectl apply -f "${repo_root}/platform/namespaces/" --recursive
-  success "Platform namespaces applied."
-}
 
 # ---------------------------------------------------------------------------
 # Summary
@@ -343,10 +320,6 @@ main() {
   install_prometheus_stack
   install_metrics_server
   install_aws_lbc
-  install_external_secrets
-  install_ebs_csi
-  install_efs_csi
-  apply_platform_base
   print_summary
 }
 
